@@ -17,7 +17,7 @@ import json
 import datetime
 import collections
 
-API_ROOT = 'https://api.parse.com/1/classes'
+API_ROOT = 'https://api.parse.com/1'
 
 APPLICATION_ID = ''
 MASTER_KEY = ''
@@ -28,8 +28,13 @@ class ParseBinaryDataWrapper(str):
 
 
 class ParseBase(object):
-    def _executeCall(self, uri, http_verb, data=None):
-        url = API_ROOT + uri
+    def _executeCall(self, uri, http_verb, data=None, apiType=None):
+        url = API_ROOT
+        if apiType:
+            url = url + apiType
+        else :
+            url = url + '/classes'
+        url = url + uri
 
         request = urllib2.Request(url, data)
 
@@ -129,6 +134,8 @@ class ParseObject(ParseBase):
                 value = self._ISO8601ToDatetime(value['iso'])
             elif value['__type'] == 'Bytes':
                 value = ParseBinaryDataWrapper(base64.b64decode(value['base64']))
+            elif value['__type'] == 'File':
+                value = ParseFile(value['name'], value['url'])
             else:
                 raise Exception('Invalid __type.')
 
@@ -252,4 +259,11 @@ class ParseQuery(ParseBase):
             return ParseObject(self._class_name, response_dict)
         else:
             return [ParseObject(self._class_name, result) for result in response_dict['results']]
+
+class ParseFile(ParseObject):
+    def __init__(self, file_name, url):
+        self.file_name = file_name
+        self.url = url
+
+
                 
