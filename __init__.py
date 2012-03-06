@@ -121,7 +121,14 @@ class ParseObject(ParseBase):
         elif type(value) == ParseBinaryDataWrapper:
             value = {'__type': 'Bytes',
                     'base64': base64.b64encode(value)}
-
+        elif type(value) == ParseFile:
+            value = {'__type': 'File',
+                    'name': value.file_name,
+                    'url': value.url}
+        elif type(value) == ParseGeoPoint:
+            value = {'__type': 'GeoPoint',
+                    'latitude': value._latitude,
+                    'longitude': value._longitude}
         return (key, value)
 
     def _convertFromParseType(self, prop):
@@ -136,6 +143,8 @@ class ParseObject(ParseBase):
                 value = ParseBinaryDataWrapper(base64.b64decode(value['base64']))
             elif value['__type'] == 'File':
                 value = ParseFile(value['name'], value['url'])
+            elif value['__type'] == 'GeoPoint':
+                value = ParseGeoPoint(value['latitude'], value['longitude'])
             else:
                 raise Exception('Invalid __type.')
 
@@ -264,6 +273,11 @@ class ParseFile(ParseObject):
     def __init__(self, file_name, url):
         self.file_name = file_name
         self.url = url
+
+class ParseGeoPoint(ParseObject):
+    def __init__(self, latitude, longitude):
+        self._latitude = latitude
+        self._longitude = longitude
 
 
                 
