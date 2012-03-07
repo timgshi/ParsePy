@@ -36,6 +36,7 @@ class ParseBase(object):
             url = url + '/classes'
         url = url + uri
 
+        print url
         request = urllib2.Request(url, data)
 
         request.add_header('Content-type', 'application/json')
@@ -45,7 +46,7 @@ class ParseBase(object):
         request.add_header("Authorization", auth_header)
 
         request.get_method = lambda: http_verb
-
+        print request
         # TODO: add error handling for server response
         response = urllib2.urlopen(request)
         response_body = response.read()
@@ -263,7 +264,6 @@ class ParseQuery(ParseBase):
             uri = '/%s?%s' % (self._class_name, urllib.urlencode(options))
 
         response_dict = self._executeCall(uri, 'GET')
-        print response_dict
         if single_result:
             return ParseObject(self._class_name, response_dict)
         else:
@@ -280,10 +280,40 @@ class ParseGeoPoint(ParseObject):
         self._longitude = longitude
 
 class ParseUser(ParseObject):
-    def __init__(self, username, email):
+    def __init__(self, username=None, email=None, session_token=None):
         self.username = username
         self.email = email
-        self.session_token = None
+        self.session_token = session_token
+
+    def login(self, username, password):
+        
+      
+
+        url = API_ROOT + '/login?'
+        
+
+        
+
+        encoded_args = urllib.urlencode({"username": username, "password": password})
+
+        url = url + encoded_args
+
+        request = urllib2.Request(url)
+
+        # we could use urllib2's authentication system, but it seems like overkill for this
+        auth_header =  "Basic %s" % base64.b64encode('%s:%s' % (APPLICATION_ID, MASTER_KEY))
+        request.add_header("Authorization", auth_header)
+
+        response = urllib2.urlopen(request)
+        response_body = response.read()
+        response_dict = json.loads(response_body)
+
+        self.username = response_dict['username']
+        self.email = response_dict['email']
+        self.session_token = response_dict['sessionToken']
+        self._object_id = response_dict['objectId']
+
+        return self
 
 
                 
