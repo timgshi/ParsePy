@@ -263,7 +263,7 @@ class ParseQuery(ParseBase):
             uri = '/%s?%s' % (self._class_name, urllib.urlencode(options))
 
         response_dict = self._executeCall(uri, 'GET')
-
+        print response_dict
         if single_result:
             return ParseObject(self._class_name, response_dict)
         else:
@@ -278,6 +278,12 @@ class ParseGeoPoint(ParseObject):
     def __init__(self, latitude, longitude):
         self._latitude = latitude
         self._longitude = longitude
+
+class ParseUser(ParseObject):
+    def __init__(self, username, email):
+        self.username = username
+        self.email = email
+        self.session_token = None
 
 
                 
