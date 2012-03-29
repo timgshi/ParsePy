@@ -16,6 +16,7 @@ import base64
 import json
 import datetime
 import collections
+import re
 
 API_ROOT = 'https://api.parse.com/1'
 
@@ -36,7 +37,6 @@ class ParseBase(object):
             url = url + '/classes'
         url = url + uri
 
-        print url
         request = urllib2.Request(url, data)
 
         request.add_header('Content-type', 'application/json')
@@ -46,7 +46,7 @@ class ParseBase(object):
         request.add_header("Authorization", auth_header)
 
         request.get_method = lambda: http_verb
-        print request
+       
         # TODO: add error handling for server response
         response = urllib2.urlopen(request)
         response_body = response.read()
@@ -259,11 +259,15 @@ class ParseQuery(ParseBase):
             if self._where:
                 # JSON encode WHERE values
                 where = json.dumps(self._where)
+                where = where.translate(None, '\\')
+                where = re.sub('"{', '{', where)
+                where = re.sub('}"', '}', where)
                 options.update({'where': where})
-
+                
             uri = '/%s?%s' % (self._class_name, urllib.urlencode(options))
 
         response_dict = self._executeCall(uri, 'GET')
+        
         if single_result:
             return ParseObject(self._class_name, response_dict)
         else:
@@ -304,14 +308,20 @@ class ParseUser(ParseObject):
         auth_header =  "Basic %s" % base64.b64encode('%s:%s' % (APPLICATION_ID, MASTER_KEY))
         request.add_header("Authorization", auth_header)
 
-        response = urllib2.urlopen(request)
-        response_body = response.read()
-        response_dict = json.loads(response_body)
+        try:
+            response = urllib2.urlopen(request)
+            response_body = response.read()
+            response_dict = json.loads(response_body)
 
-        self.username = response_dict['username']
-        self.email = response_dict['email']
-        self.session_token = response_dict['sessionToken']
-        self._object_id = response_dict['objectId']
+            
+
+            self.username = response_dict['username']
+            self.email = response_dict['email']
+            self.session_token = response_dict['sessionToken']
+            self._object_id = response_dict['objectId']
+        except urllib2.HTTPError:
+            self.session_token = None
+            pass
 
         return self
 
