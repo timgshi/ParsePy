@@ -71,6 +71,12 @@ class ParseObject(ParseBase):
         if attrs_dict:
             self._populateFromDict(attrs_dict)
 
+    def __str__(self):
+        return self._object_id
+
+    def __unicode__(self):
+        return self._object_id
+
     def objectId(self):
         return self._object_id
 
@@ -146,6 +152,8 @@ class ParseObject(ParseBase):
                 value = ParseFile(value['name'], value['url'])
             elif value['__type'] == 'GeoPoint':
                 value = ParseGeoPoint(value['latitude'], value['longitude'])
+            # elif value['__type'] == "PFUser"
+            #     value = ParseUser()
             else:
                 raise Exception('Invalid __type.')
 
@@ -278,16 +286,31 @@ class ParseFile(ParseObject):
         self.file_name = file_name
         self.url = url
 
+    def __unicode__(self):
+        return self.url
+
+    def __str__(self):
+        return self.url
+
 class ParseGeoPoint(ParseObject):
     def __init__(self, latitude, longitude):
         self._latitude = latitude
         self._longitude = longitude
+
+    def __unicode__(self):
+        return self._latitude + ", " + self._longitude
+
+    def __str__(self):
+        return "%f, %f" % (self._latitude, self._longitude)
 
 class ParseUser(ParseObject):
     def __init__(self, username=None, email=None, session_token=None):
         self.username = username
         self.email = email
         self.session_token = session_token
+
+    def __unicode__(self):
+        return username
 
     def login(self, username, password):
         
