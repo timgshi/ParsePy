@@ -143,7 +143,10 @@ class ParseObject(ParseBase):
 
         if type(value) == dict and value.has_key('__type'):
             if value['__type'] == 'Pointer':
-                value = ParseQuery(value['className']).get(value['objectId'])
+                try:
+                    value = ParseQuery(value['className']).get(value['objectId'])
+                except urllib2.HTTPError:
+                    pass
             elif value['__type'] == 'Date':
                 value = self._ISO8601ToDatetime(value['iso'])
             elif value['__type'] == 'Bytes':
@@ -311,6 +314,41 @@ class ParseUser(ParseObject):
 
     def __unicode__(self):
         return username
+
+    def facebookLogin(self, userID, access_token, expiration_date):
+        url = API_ROOT + '/users?'
+
+        encoded_args = urllib.urlencode({"authData": {"facebook": {"id": userID,
+                                                        "access_token": access_token,
+                                                        "expiration_date": "2020-01-01'T'12:12:12.111'Z'"}}})
+
+
+        url = url + encoded_args
+        print url
+        request = urllib2.Request(url)
+
+        # we could use urllib2's authentication system, but it seems like overkill for this
+        auth_header =  "Basic %s" % base64.b64encode('%s:%s' % (APPLICATION_ID, MASTER_KEY))
+        request.add_header("Authorization", auth_header)
+        try:
+            print 'before response'
+            response = urllib2.urlopen(request)
+            print response
+            response_body = response.read()
+            response_dict = json.loads(response_body)
+
+            
+
+            self.username = response_dict['username']
+            self.email = response_dict['email']
+            self.session_token = response_dict['sessionToken']
+            self._object_id = response_dict['objectId']
+        except urllib2.HTTPError:
+            print 'http error'
+            self.session_token = None
+            pass
+
+        return self
 
     def login(self, username, password):
         
